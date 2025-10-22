@@ -5,6 +5,7 @@ import EmpresaDetalle from "./pages/EmpresaDetalle";
 import Login from "./pages/Login";
 import AdminEmpresaForm from "./pages/AdminEmpresaForm";
 import Navbar from "./components/Navbar";
+import AdminProductos from "./pages/AdminProductos";
 
 export default function App() {
   return (
@@ -18,6 +19,10 @@ export default function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/admin/empresas/nueva" element={<AdminEmpresaForm />} />
           <Route path="*" element={<Navigate to="/" replace />} />
+          <Route
+            path="/admin/empresa/:id/productos"
+            element={<AdminProductos />}
+          />
         </Routes>
       </main>
       <footer

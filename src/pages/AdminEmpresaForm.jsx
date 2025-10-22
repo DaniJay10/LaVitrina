@@ -27,7 +27,6 @@ export default function AdminEmpresaForm() {
     categoria: CATS[0],
     descripcion: "",
     direccion: "",
-    productosTxt: "",
     imagenUrl: "",
   });
   const [touched, setTouched] = useState({});
@@ -43,11 +42,6 @@ export default function AdminEmpresaForm() {
 
   const onChange = (k, v) => setForm((prev) => ({ ...prev, [k]: v }));
   const onBlur = (k) => setTouched((prev) => ({ ...prev, [k]: true }));
-
-  const normalizedPreview = useMemo(
-    () => normalizeImg(form.imagenUrl),
-    [form.imagenUrl]
-  );
 
   const errors = useMemo(() => {
     const e = {};
@@ -69,19 +63,13 @@ export default function AdminEmpresaForm() {
       setTouched({ nombre: true, descripcion: true, imagenUrl: true });
       return;
     }
-    const productos = form.productosTxt
-      ? form.productosTxt
-          .split(",")
-          .map((s) => s.trim())
-          .filter(Boolean)
-      : [];
     const nueva = {
       id: uuid(),
       nombre: form.nombre.trim(),
       categoria: form.categoria,
       descripcion: form.descripcion.trim(),
       direccion: form.direccion.trim(),
-      productos,
+      productos: [], // <-- vacío por ahora, se gestionará aparte
       fechaRegistro: new Date().toISOString(),
       imagenUrl: form.imagenUrl ? normalizeImg(form.imagenUrl) : undefined,
     };
@@ -150,16 +138,6 @@ export default function AdminEmpresaForm() {
         </div>
 
         <div className="col-12 col-md-6">
-          <label className="form-label">Productos (separados por coma)</label>
-          <input
-            className="form-control"
-            placeholder="Ej: Capuchino, Mocaccino"
-            value={form.productosTxt}
-            onChange={(e) => onChange("productosTxt", e.target.value)}
-          />
-        </div>
-
-        <div className="col-12 col-md-8">
           <label className="form-label">Imagen (URL o archivo en public)</label>
           <input
             className={`form-control ${
@@ -174,31 +152,9 @@ export default function AdminEmpresaForm() {
             <div className="invalid-feedback">{errors.imagenUrl}</div>
           )}
           <div className="form-text">
-            Puedes escribir direccion URL de la imagen (p.ej.{" "}
-            <code>https://.</code>) o archivo de /public (p.ej.{" "}
+            Puedes escribir dirección URL de la imagen (p.ej.{" "}
+            <code>https://…</code>) o archivo de /public (p.ej.{" "}
             <code>coffee.jpg</code>).
-          </div>
-        </div>
-
-        <div className="col-12 col-md-4">
-          <label className="form-label">Vista previa</label>
-          <div
-            className="border rounded d-flex align-items-center justify-content-center bg-light"
-            style={{ height: 120 }}
-          >
-            {normalizedPreview ? (
-              <img
-                src={normalizedPreview}
-                alt="Vista previa"
-                className="h-100"
-                style={{ objectFit: "contain" }}
-                onError={(e) => {
-                  e.currentTarget.style.opacity = 0.3;
-                }}
-              />
-            ) : (
-              <span className="text-muted small">Sin imagen</span>
-            )}
           </div>
         </div>
 

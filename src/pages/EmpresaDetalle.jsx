@@ -2,6 +2,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useData } from "../context/DataContext";
 import { useAuth } from "../context/AuthContext";
 import ProductCard from "../components/ProductCard";
+import { Link } from "react-router-dom";
 
 export default function EmpresaDetalle() {
   const { id } = useParams();
@@ -53,18 +54,32 @@ export default function EmpresaDetalle() {
           ← Regresar
         </button>
         {isAdmin && (
-          <button
-            onClick={onDelete}
-            style={{
-              padding: "8px 12px",
-              border: "1px solid #f1c0c0",
-              background: "#ffecec",
-              borderRadius: 8,
-              cursor: "pointer",
-            }}
-          >
-            Eliminar
-          </button>
+          <>
+            <button
+              onClick={onDelete}
+              style={{
+                padding: "8px 12px",
+                border: "1px solid #f1c0c0",
+                background: "#ffecec",
+                borderRadius: 8,
+                cursor: "pointer",
+              }}
+            >
+              Eliminar
+            </button>
+
+            <Link
+              to={`/admin/empresa/${empresa.id}/productos`}
+              style={{
+                padding: "8px 12px",
+                border: "1px solid #ddd",
+                borderRadius: 8,
+                textDecoration: "none",
+              }}
+            >
+              Gestionar productos
+            </Link>
+          </>
         )}
       </div>
 
