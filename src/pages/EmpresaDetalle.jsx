@@ -1,6 +1,7 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useData } from "../context/DataContext";
 import { useAuth } from "../context/AuthContext";
+import ProductCard from "../components/ProductCard";
 
 export default function EmpresaDetalle() {
   const { id } = useParams();
@@ -78,12 +79,19 @@ export default function EmpresaDetalle() {
       <p>{empresa.descripcion}</p>
 
       <h2>Catálogo</h2>
-      {empresa.productos?.length ? (
-        <ul>
+      {empresa.productos && empresa.productos.length > 0 ? (
+        <div
+          style={{
+            display: "grid",
+            gap: 12,
+            gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))",
+            marginTop: 8,
+          }}
+        >
           {empresa.productos.map((p, i) => (
-            <li key={i}>{p}</li>
+            <ProductCard key={i} producto={p} />
           ))}
-        </ul>
+        </div>
       ) : (
         <p style={{ opacity: 0.7 }}>Sin productos cargados aún.</p>
       )}

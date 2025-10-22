@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useData } from "../context/DataContext";
 
-const IMAGE_FIT = "contain"; // en lugar de 'cover'
+const IMAGE_FIT = "contain";
 const IMAGE_RATIO_CLASS = "ratio-4x3";
 
 export default function EmpresaCard({ empresa }) {

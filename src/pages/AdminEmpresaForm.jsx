@@ -55,7 +55,6 @@ export default function AdminEmpresaForm() {
     if (!form.descripcion.trim()) e.descripcion = "Requerido";
     if (form.imagenUrl) {
       const n = normalizeImg(form.imagenUrl);
-      // si no es http(s) ni /, normalizeImg ya lo corrige a '/...'; no marcamos error
       if (!/^https?:\/\//i.test(n) && !n.startsWith("/")) {
         e.imagenUrl =
           "Use una URL externa o un archivo en /public (ej: /foto.jpg)";
