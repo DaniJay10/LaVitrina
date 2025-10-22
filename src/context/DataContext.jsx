@@ -11,6 +11,18 @@ import seed from "../data/empresas.json";
 const C_CREATED = "empresasCreadas";
 const C_REMOVED = "empresasEliminadas";
 
+function keyProductos(empresaId) {
+  return `productosCreados:${empresaId}`;
+}
+
+function getProductosCreados(empresaId) {
+  return JSON.parse(localStorage.getItem(keyProductos(empresaId)) || "[]");
+}
+
+function setProductosCreados(empresaId, arr) {
+  localStorage.setItem(keyProductos(empresaId), JSON.stringify(arr));
+}
+
 const Ctx = createContext(null);
 
 export function DataProvider({ children }) {
@@ -22,10 +34,16 @@ export function DataProvider({ children }) {
     setTimeout(() => {
       const creadas = JSON.parse(localStorage.getItem(C_CREATED) || "[]");
       const eliminadas = JSON.parse(localStorage.getItem(C_REMOVED) || "[]");
+
       const base = seed.filter((e) => !eliminadas.includes(e.id));
-      const merged = [...base, ...creadas].sort(
-        (a, b) => new Date(b.fechaRegistro) - new Date(a.fechaRegistro)
-      );
+      const merged = [...base, ...creadas]
+        .sort((a, b) => new Date(b.fechaRegistro) - new Date(a.fechaRegistro))
+        .map((e) => {
+          const creados = getProductosCreados(e.id);
+          const productos = [...(e.productos || []), ...creados];
+          return { ...e, productos };
+        });
+
       setEmpresas(merged);
       setLoading(false);
     }, 150);
@@ -55,14 +73,25 @@ export function DataProvider({ children }) {
         localStorage.getItem(C_CREATED) || "[]"
       ).filter((e) => e.id !== id);
       localStorage.setItem(C_CREATED, JSON.stringify(creadas));
+      // limpia también los productos creados para esa empresa
+      localStorage.removeItem(keyProductos(id));
+      load();
+    },
+    [load]
+  );
+
+  const crearProducto = useCallback(
+    (empresaId, producto) => {
+      const actuales = getProductosCreados(empresaId);
+      setProductosCreados(empresaId, [producto, ...actuales]);
       load();
     },
     [load]
   );
 
   const value = useMemo(
-    () => ({ empresas, loading, crearEmpresa, eliminarEmpresa }),
-    [empresas, loading, crearEmpresa, eliminarEmpresa]
+    () => ({ empresas, loading, crearEmpresa, eliminarEmpresa, crearProducto }),
+    [empresas, loading, crearEmpresa, eliminarEmpresa, crearProducto]
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

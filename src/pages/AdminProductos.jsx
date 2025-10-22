@@ -50,7 +50,12 @@ export default function AdminProductos() {
             Ver empresa
           </Link>
         </div>
-        <button className="btn btn-primary" disabled>
+        <button
+          className="btn btn-primary"
+          onClick={() =>
+            navigate(`/admin/empresa/${empresa.id}/productos/nuevo`)
+          }
+        >
           Agregar producto
         </button>
       </div>
