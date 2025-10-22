@@ -1,44 +1,42 @@
 import { Link } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import { useData } from "../context/DataContext";
 
 export default function EmpresaCard({ empresa }) {
+  const { isAdmin } = useAuth();
+  const { eliminarEmpresa } = useData();
+
+  const onDelete = () => {
+    if (confirm("¿Eliminar esta empresa?")) eliminarEmpresa(empresa.id);
+  };
+
   return (
-    <article
-      style={{
-        border: "1px solid #eee",
-        borderRadius: 12,
-        padding: 16,
-        display: "flex",
-        flexDirection: "column",
-        gap: 8,
-      }}
-    >
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "baseline",
-        }}
-      >
-        <h3 style={{ margin: 0 }}>{empresa.nombre}</h3>
-        <span style={{ fontSize: 12, opacity: 0.7 }}>{empresa.categoria}</span>
-      </div>
-      <p style={{ margin: 0, opacity: 0.85 }}>{empresa.descripcion}</p>
-      <p style={{ margin: 0, fontSize: 13, opacity: 0.7 }}>
-        📍 {empresa.direccion}
-      </p>
-      <div style={{ marginTop: 8 }}>
-        <Link
-          to={`/empresa/${empresa.id}`}
-          style={{
-            fontSize: 14,
-            padding: "8px 12px",
-            border: "1px solid #ddd",
-            borderRadius: 8,
-            textDecoration: "none",
-          }}
-        >
-          Ver catálogo
-        </Link>
+    <article className="card h-100">
+      <div className="card-body d-flex flex-column">
+        <div className="d-flex justify-content-between align-items-baseline">
+          <h3 className="h6 m-0">{empresa.nombre}</h3>
+          <span className="text-muted small">{empresa.categoria}</span>
+        </div>
+
+        <p className="mb-1">{empresa.descripcion}</p>
+        <p className="text-muted small mb-3">📍 {empresa.direccion}</p>
+
+        <div className="mt-auto d-flex gap-2">
+          <Link
+            to={`/empresa/${empresa.id}`}
+            className="btn btn-outline-secondary btn-sm"
+          >
+            Ver catálogo
+          </Link>
+          {isAdmin && (
+            <button
+              onClick={onDelete}
+              className="btn btn-outline-danger btn-sm"
+            >
+              Eliminar
+            </button>
+          )}
+        </div>
       </div>
     </article>
   );

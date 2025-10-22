@@ -1,16 +1,65 @@
-import { createContext, useContext, useMemo } from "react";
-import data from "../data/empresas.json";
+import {
+  createContext,
+  useContext,
+  useMemo,
+  useState,
+  useEffect,
+  useCallback,
+} from "react";
+import seed from "../data/empresas.json";
+
+const C_CREATED = "empresasCreadas";
+const C_REMOVED = "empresasEliminadas";
 
 const Ctx = createContext(null);
 
 export function DataProvider({ children }) {
-  const empresas = useMemo(() => {
-    return [...data].sort(
+  const [empresas, setEmpresas] = useState([]);
+
+  const load = useCallback(() => {
+    const creadas = JSON.parse(localStorage.getItem(C_CREATED) || "[]");
+    const eliminadas = JSON.parse(localStorage.getItem(C_REMOVED) || "[]");
+    const base = seed.filter((e) => !eliminadas.includes(e.id));
+    const merged = [...base, ...creadas].sort(
       (a, b) => new Date(b.fechaRegistro) - new Date(a.fechaRegistro)
     );
+    setEmpresas(merged);
   }, []);
 
-  const value = useMemo(() => ({ empresas }), [empresas]);
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  const crearEmpresa = useCallback(
+    (e) => {
+      const creadas = JSON.parse(localStorage.getItem(C_CREATED) || "[]");
+      localStorage.setItem(C_CREATED, JSON.stringify([e, ...creadas]));
+      load();
+    },
+    [load]
+  );
+
+  const eliminarEmpresa = useCallback(
+    (id) => {
+      const eliminadas = JSON.parse(localStorage.getItem(C_REMOVED) || "[]");
+      if (!eliminadas.includes(id)) {
+        eliminadas.push(id);
+        localStorage.setItem(C_REMOVED, JSON.stringify(eliminadas));
+      }
+      // también quitar si estaba en creadas
+      const creadas = JSON.parse(
+        localStorage.getItem(C_CREATED) || "[]"
+      ).filter((e) => e.id !== id);
+      localStorage.setItem(C_CREATED, JSON.stringify(creadas));
+      load();
+    },
+    [load]
+  );
+
+  const value = useMemo(
+    () => ({ empresas, crearEmpresa, eliminarEmpresa }),
+    [empresas, crearEmpresa, eliminarEmpresa]
+  );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

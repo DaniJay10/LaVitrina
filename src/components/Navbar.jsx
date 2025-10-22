@@ -1,131 +1,75 @@
-import { Link, NavLink, useNavigate } from "react-router-dom";
-import { useState, useRef, useEffect } from "react";
-
-// Categorías fijas
-const CATEGORIAS = ["Deporte", "Comida", "Maquillaje", "Artesanias"];
+import { Link, NavLink, useNavigate, useLocation } from "react-router-dom";
+import { useState, useMemo } from "react";
+import { useAuth } from "../context/AuthContext";
+import CategoryPills from "./CategoryPills";
 
 export default function Navbar() {
-  const linkStyle = {
-    textDecoration: "none",
-    padding: "8px 12px",
-    borderRadius: 8,
-  };
-  const active = { background: "#efefef" };
-
-  const [open, setOpen] = useState(false);
-  const ref = useRef(null);
+  const { isAdmin, logout } = useAuth();
+  const [text, setText] = useState("");
   const navigate = useNavigate();
+  const { search } = useLocation();
+  const params = useMemo(() => new URLSearchParams(search), [search]);
+  const cat = params.get("cat") || "";
 
-  useEffect(() => {
-    const onClick = (e) => {
-      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
-    };
-    document.addEventListener("click", onClick);
-    return () => document.removeEventListener("click", onClick);
-  }, []);
-
-  const goToCat = (cat) => {
-    setOpen(false);
-    navigate(`/empresas?cat=${encodeURIComponent(cat)}`);
+  const applySearch = () => {
+    const p = new URLSearchParams();
+    if (cat) p.set("cat", cat);
+    if (text) p.set("q", text);
+    navigate({ pathname: "/empresas", search: p.toString() });
   };
 
   return (
-    <header style={{ borderBottom: "1px solid #eee" }}>
-      <nav
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          gap: 12,
-          maxWidth: 1100,
-          margin: "0 auto",
-          padding: "12px 16px",
-        }}
-      >
-        <Link to="/" style={{ fontWeight: 700, fontSize: 18 }}>
-          La Vitrina
-        </Link>
+    <header className="border-bottom">
+      <nav className="container py-3">
+        <div className="d-flex align-items-center justify-content-between gap-2">
+          <Link to="/" className="fw-bold fs-5 text-decoration-none">
+            La Vitrina
+          </Link>
 
-        <div
-          style={{ display: "flex", gap: 8, position: "relative" }}
-          ref={ref}
-        >
-          <NavLink
-            to="/"
-            style={({ isActive }) => ({
-              ...linkStyle,
-              ...(isActive ? active : {}),
-            })}
-          >
-            Inicio
-          </NavLink>
+          <div className="d-flex gap-2">
+            {isAdmin && (
+              <NavLink
+                to="/admin/empresas/nueva"
+                className="btn btn-outline-secondary"
+              >
+                Nueva empresa
+              </NavLink>
+            )}
+            {!isAdmin ? (
+              <NavLink to="/login" className="btn btn-outline-secondary">
+                Iniciar sesión
+              </NavLink>
+            ) : (
+              <button
+                onClick={() => {
+                  logout();
+                  navigate("/");
+                }}
+                className="btn btn-outline-secondary"
+              >
+                Cerrar sesión
+              </button>
+            )}
+          </div>
+        </div>
 
-          <button
-            onClick={() => setOpen((v) => !v)}
-            style={{
-              ...linkStyle,
-              border: "1px solid #e5e5e5",
-              background: "#fff",
-              cursor: "pointer",
-            }}
-            aria-haspopup="menu"
-            aria-expanded={open}
-          >
-            Categoría ▾
-          </button>
-
-          {open && (
-            <div
-              role="menu"
-              style={{
-                position: "absolute",
-                top: 44,
-                left: 92,
-                background: "#fff",
-                border: "1px solid #e5e5e5",
-                borderRadius: 8,
-                boxShadow: "0 6px 18px rgba(0,0,0,0.08)",
-                minWidth: 180,
-                padding: 8,
-                zIndex: 20,
+        <div className="d-flex align-items-center gap-3 mt-3">
+          <CategoryPills />
+          <div className="ms-auto d-flex gap-2">
+            <input
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") applySearch();
               }}
-            >
-              {CATEGORIAS.map((c) => (
-                <button
-                  key={c}
-                  onClick={() => goToCat(c)}
-                  style={{
-                    display: "block",
-                    width: "100%",
-                    textAlign: "left",
-                    padding: "8px 10px",
-                    borderRadius: 6,
-                    border: "none",
-                    background: "transparent",
-                    cursor: "pointer",
-                  }}
-                  onMouseEnter={(e) =>
-                    (e.currentTarget.style.background = "#f7f7f7")
-                  }
-                  onMouseLeave={(e) =>
-                    (e.currentTarget.style.background = "transparent")
-                  }
-                >
-                  {c}
-                </button>
-              ))}
-            </div>
-          )}
-
-          <NavLink
-            to="/login"
-            style={({ isActive }) => ({
-              ...linkStyle,
-              ...(isActive ? active : {}),
-            })}
-          >
-            Iniciar sesión
-          </NavLink>
+              placeholder="Buscar por nombre…"
+              className="form-control"
+              style={{ width: 260 }}
+            />
+            <button onClick={applySearch} className="btn btn-outline-secondary">
+              Buscar
+            </button>
+          </div>
         </div>
       </nav>
     </header>

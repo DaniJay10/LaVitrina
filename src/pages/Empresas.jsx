@@ -11,30 +11,35 @@ function useQuery() {
 export default function Empresas() {
   const { empresas } = useData();
   const q = useQuery();
-  const cat = q.get("cat");
 
-  const list = useMemo(() => {
-    if (!cat) return empresas;
-    return empresas.filter(
-      (e) => e.categoria.toLowerCase() === cat.toLowerCase()
-    );
-  }, [empresas, cat]);
+  const cat = q.get("cat") || "";
+  const qtext = q.get("q") || "";
+
+  const filtered = useMemo(() => {
+    let list = empresas;
+    if (cat)
+      list = list.filter(
+        (e) => e.categoria.toLowerCase() === cat.toLowerCase()
+      );
+    if (qtext)
+      list = list.filter((e) =>
+        e.nombre.toLowerCase().includes(qtext.toLowerCase())
+      );
+    return list;
+  }, [empresas, cat, qtext]);
 
   return (
-    <section>
-      <h1>{cat ? `Categoría: ${cat}` : "Empresas"}</h1>
-      {list.length === 0 ? (
-        <p style={{ opacity: 0.7 }}>No hay empresas para esta categoría.</p>
+    <section className="container my-3">
+      <h1 className="h3">{cat ? `Categoría: ${cat}` : "Empresas"}</h1>
+
+      {filtered.length === 0 ? (
+        <p className="text-muted">Sin resultados.</p>
       ) : (
-        <div
-          style={{
-            display: "grid",
-            gap: 16,
-            gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))",
-          }}
-        >
-          {list.map((e) => (
-            <EmpresaCard key={e.id} empresa={e} />
+        <div className="row g-3">
+          {filtered.map((e) => (
+            <div key={e.id} className="col-12 col-sm-6 col-md-4 col-lg-3">
+              <EmpresaCard empresa={e} />
+            </div>
           ))}
         </div>
       )}
