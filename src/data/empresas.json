@@ -2,7 +2,7 @@
   {
     "id": "e-001",
     "nombre": "Café La Montaña",
-    "categoria": "Gastronomía",
+    "categoria": "Comida",
     "descripcion": "Café artesanal y repostería.",
     "direccion": "Cra 12 # 34-56",
     "productos": ["Capuchino", "Mocaccino", "Torta de zanahoria"],

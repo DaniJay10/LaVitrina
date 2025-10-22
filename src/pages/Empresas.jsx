@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { useLocation } from "react-router-dom";
+import EmptyState from "../components/EmptyState";
 import { useData } from "../context/DataContext";
 import EmpresaCard from "../components/EmpresaCard";
 
@@ -9,11 +10,21 @@ function useQuery() {
 }
 
 export default function Empresas() {
-  const { empresas } = useData();
+  const { empresas, loading } = useData();
   const q = useQuery();
 
   const cat = q.get("cat") || "";
   const qtext = q.get("q") || "";
+
+  if (loading) {
+    return (
+      <div className="d-flex justify-content-center my-5">
+        <div className="spinner-border" role="status">
+          <span className="visually-hidden">Cargando…</span>
+        </div>
+      </div>
+    );
+  }
 
   const filtered = useMemo(() => {
     let list = empresas;
@@ -33,7 +44,10 @@ export default function Empresas() {
       <h1 className="h3">{cat ? `Categoría: ${cat}` : "Empresas"}</h1>
 
       {filtered.length === 0 ? (
-        <p className="text-muted">Sin resultados.</p>
+        <EmptyState
+          title="Sin resultados"
+          text="Prueba otra categoría o búsqueda."
+        />
       ) : (
         <div className="row g-3">
           {filtered.map((e) => (

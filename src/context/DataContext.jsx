@@ -15,15 +15,20 @@ const Ctx = createContext(null);
 
 export function DataProvider({ children }) {
   const [empresas, setEmpresas] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   const load = useCallback(() => {
-    const creadas = JSON.parse(localStorage.getItem(C_CREATED) || "[]");
-    const eliminadas = JSON.parse(localStorage.getItem(C_REMOVED) || "[]");
-    const base = seed.filter((e) => !eliminadas.includes(e.id));
-    const merged = [...base, ...creadas].sort(
-      (a, b) => new Date(b.fechaRegistro) - new Date(a.fechaRegistro)
-    );
-    setEmpresas(merged);
+    setLoading(true);
+    setTimeout(() => {
+      const creadas = JSON.parse(localStorage.getItem(C_CREATED) || "[]");
+      const eliminadas = JSON.parse(localStorage.getItem(C_REMOVED) || "[]");
+      const base = seed.filter((e) => !eliminadas.includes(e.id));
+      const merged = [...base, ...creadas].sort(
+        (a, b) => new Date(b.fechaRegistro) - new Date(a.fechaRegistro)
+      );
+      setEmpresas(merged);
+      setLoading(false);
+    }, 150);
   }, []);
 
   useEffect(() => {
@@ -46,7 +51,6 @@ export function DataProvider({ children }) {
         eliminadas.push(id);
         localStorage.setItem(C_REMOVED, JSON.stringify(eliminadas));
       }
-      // también quitar si estaba en creadas
       const creadas = JSON.parse(
         localStorage.getItem(C_CREATED) || "[]"
       ).filter((e) => e.id !== id);
@@ -57,8 +61,8 @@ export function DataProvider({ children }) {
   );
 
   const value = useMemo(
-    () => ({ empresas, crearEmpresa, eliminarEmpresa }),
-    [empresas, crearEmpresa, eliminarEmpresa]
+    () => ({ empresas, loading, crearEmpresa, eliminarEmpresa }),
+    [empresas, loading, crearEmpresa, eliminarEmpresa]
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
