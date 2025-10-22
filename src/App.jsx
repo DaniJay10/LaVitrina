@@ -33,10 +33,7 @@ export default function App() {
       <footer
         style={{ textAlign: "center", padding: "24px 12px", opacity: 0.7 }}
       >
-        <small>
-          Proyecto escolar de marketing – Hecho con React + Vite.{" "}
-          <Link to="/empresas">Ver empresas</Link>
-        </small>
+        <small>Proyecto escolar de marketing – Hecho con React</small>
       </footer>
     </div>
   );

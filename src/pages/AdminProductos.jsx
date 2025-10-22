@@ -6,10 +6,8 @@ import { useAuth } from "../context/AuthContext";
 export default function AdminProductos() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { empresas } = useData();
+  const { empresas, eliminarProducto } = useData();
   const { isAdmin } = useAuth();
-
-  const empresa = empresas.find((e) => e.id === id);
 
   if (!isAdmin) {
     return (
@@ -19,6 +17,7 @@ export default function AdminProductos() {
     );
   }
 
+  const empresa = empresas.find((e) => e.id === id);
   if (!empresa) {
     return (
       <section className="container my-3">
@@ -32,6 +31,12 @@ export default function AdminProductos() {
       </section>
     );
   }
+
+  const onDelete = (uiIndex) => {
+    if (confirm("¿Eliminar este producto?")) {
+      eliminarProducto(empresa.id, uiIndex);
+    }
+  };
 
   return (
     <section className="container my-3">
@@ -60,18 +65,27 @@ export default function AdminProductos() {
         </button>
       </div>
 
-      <h1 className="h4 mb-2">Productos de {empresa.nombre}</h1>
+      <h1 className="h4 mb-2">Catálogo — {empresa.nombre}</h1>
 
-      {empresa.productos && empresa.productos.length > 0 ? (
-        <div className="row g-3 mt-1">
-          {empresa.productos.map((p, idx) => (
-            <div key={idx} className="col-12 col-sm-6 col-md-4 col-lg-3">
-              <ProductCard producto={p} />
+      {!empresa.productos || empresa.productos.length === 0 ? (
+        <p className="text-muted">Aún no hay productos.</p>
+      ) : (
+        <div className="row g-3">
+          {empresa.productos.map((p, uiIndex) => (
+            <div key={uiIndex} className="col-12 col-sm-6 col-md-4 col-lg-3">
+              <div className="position-relative">
+                <ProductCard producto={p} />
+                <button
+                  className="btn btn-outline-danger btn-sm position-absolute top-0 end-0 m-2"
+                  onClick={() => onDelete(uiIndex)}
+                  aria-label={`Eliminar ${p.nombre}`}
+                >
+                  Eliminar
+                </button>
+              </div>
             </div>
           ))}
         </div>
-      ) : (
-        <p className="text-muted">Aún no hay productos.</p>
       )}
     </section>
   );
