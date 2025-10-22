@@ -65,7 +65,7 @@ export default function EmpresaDetalle() {
                 cursor: "pointer",
               }}
             >
-              Eliminar
+              Eliminar Empresa
             </button>
 
             <Link

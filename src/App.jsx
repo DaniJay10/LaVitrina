@@ -6,6 +6,8 @@ import Login from "./pages/Login";
 import AdminEmpresaForm from "./pages/AdminEmpresaForm";
 import Navbar from "./components/Navbar";
 import AdminProductos from "./pages/AdminProductos";
+import AdminProductoNuevo from "./pages/AdminProductoNuevo";
+import AdminProductoEditar from "./pages/AdminProductoEditar";
 
 export default function App() {
   return (
@@ -23,15 +25,20 @@ export default function App() {
             path="/admin/empresa/:id/productos"
             element={<AdminProductos />}
           />
+          <Route
+            path="/admin/empresa/:id/productos/nuevo"
+            element={<AdminProductoNuevo />}
+          />
+          <Route
+            path="/admin/empresa/:id/productos/:uiIndex/editar"
+            element={<AdminProductoEditar />}
+          />
         </Routes>
       </main>
       <footer
         style={{ textAlign: "center", padding: "24px 12px", opacity: 0.7 }}
       >
-        <small>
-          Proyecto escolar de marketing – Hecho con React + Vite.{" "}
-          <Link to="/empresas">Ver empresas</Link>
-        </small>
+        <small>Proyecto escolar de marketing – Hecho con React</small>
       </footer>
     </div>
   );
