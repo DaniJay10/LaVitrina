@@ -1,12 +1,20 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useData } from "../context/DataContext";
 
-const CATS = ["Deporte", "Comida", "Maquillaje", "Artesanias"];
+const CATS = ["Deporte", "Gastronomía", "Maquillaje", "Artesanias"];
 
 function uuid() {
   return "e-" + Math.random().toString(36).slice(2, 9);
+}
+
+function normalizeImg(url) {
+  const v = (url || "").trim();
+  if (!v) return "";
+  if (v.startsWith("http://") || v.startsWith("https://") || v.startsWith("/"))
+    return v;
+  return "/" + v;
 }
 
 export default function AdminEmpresaForm() {
@@ -20,22 +28,48 @@ export default function AdminEmpresaForm() {
     descripcion: "",
     direccion: "",
     productosTxt: "",
+    imagenUrl: "",
   });
+  const [touched, setTouched] = useState({});
 
   if (!isAdmin) {
     return (
-      <section>
-        <h1>No autorizado</h1>
+      <section className="container my-3">
+        <h1 className="h4">No autorizado</h1>
         <p>Inicia sesión como admin.</p>
       </section>
     );
   }
 
   const onChange = (k, v) => setForm((prev) => ({ ...prev, [k]: v }));
+  const onBlur = (k) => setTouched((prev) => ({ ...prev, [k]: true }));
 
-  const onSubmit = (e) => {
-    e.preventDefault();
-    if (!form.nombre.trim() || !form.descripcion.trim()) return;
+  const normalizedPreview = useMemo(
+    () => normalizeImg(form.imagenUrl),
+    [form.imagenUrl]
+  );
+
+  const errors = useMemo(() => {
+    const e = {};
+    if (!form.nombre.trim()) e.nombre = "Requerido";
+    if (!form.descripcion.trim()) e.descripcion = "Requerido";
+    if (form.imagenUrl) {
+      const n = normalizeImg(form.imagenUrl);
+      // si no es http(s) ni /, normalizeImg ya lo corrige a '/...'; no marcamos error
+      if (!/^https?:\/\//i.test(n) && !n.startsWith("/")) {
+        e.imagenUrl =
+          "Use una URL externa o un archivo en /public (ej: /foto.jpg)";
+      }
+    }
+    return e;
+  }, [form]);
+
+  const onSubmit = (ev) => {
+    ev.preventDefault();
+    if (Object.keys(errors).length) {
+      setTouched({ nombre: true, descripcion: true, imagenUrl: true });
+      return;
+    }
     const productos = form.productosTxt
       ? form.productosTxt
           .split(",")
@@ -50,60 +84,130 @@ export default function AdminEmpresaForm() {
       direccion: form.direccion.trim(),
       productos,
       fechaRegistro: new Date().toISOString(),
+      imagenUrl: form.imagenUrl ? normalizeImg(form.imagenUrl) : undefined,
     };
     crearEmpresa(nueva);
     navigate("/");
   };
 
   return (
-    <section>
-      <h1>Nueva empresa</h1>
-      <form
-        onSubmit={onSubmit}
-        style={{ display: "grid", gap: 10, maxWidth: 520 }}
-      >
-        <input
-          placeholder="Nombre"
-          value={form.nombre}
-          onChange={(e) => onChange("nombre", e.target.value)}
-        />
-        <select
-          value={form.categoria}
-          onChange={(e) => onChange("categoria", e.target.value)}
-        >
-          {CATS.map((c) => (
-            <option key={c} value={c}>
-              {c}
-            </option>
-          ))}
-        </select>
-        <textarea
-          placeholder="Descripción"
-          rows={3}
-          value={form.descripcion}
-          onChange={(e) => onChange("descripcion", e.target.value)}
-        />
-        <input
-          placeholder="Dirección"
-          value={form.direccion}
-          onChange={(e) => onChange("direccion", e.target.value)}
-        />
-        <input
-          placeholder="Productos (separados por coma)"
-          value={form.productosTxt}
-          onChange={(e) => onChange("productosTxt", e.target.value)}
-        />
-        <button
-          type="submit"
-          style={{
-            padding: "8px 12px",
-            border: "1px solid #ddd",
-            borderRadius: 8,
-            cursor: "pointer",
-          }}
-        >
-          Crear
-        </button>
+    <section className="container my-3">
+      <h1 className="h4">Nueva empresa</h1>
+
+      <form onSubmit={onSubmit} className="row g-3">
+        <div className="col-12 col-md-6">
+          <label className="form-label">Nombre *</label>
+          <input
+            className={`form-control ${
+              touched.nombre && errors.nombre ? "is-invalid" : ""
+            }`}
+            value={form.nombre}
+            onChange={(e) => onChange("nombre", e.target.value)}
+            onBlur={() => onBlur("nombre")}
+          />
+          {touched.nombre && errors.nombre && (
+            <div className="invalid-feedback">{errors.nombre}</div>
+          )}
+        </div>
+
+        <div className="col-12 col-md-6">
+          <label className="form-label">Categoría</label>
+          <select
+            className="form-select"
+            value={form.categoria}
+            onChange={(e) => onChange("categoria", e.target.value)}
+          >
+            {CATS.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="col-12">
+          <label className="form-label">Descripción *</label>
+          <textarea
+            className={`form-control ${
+              touched.descripcion && errors.descripcion ? "is-invalid" : ""
+            }`}
+            rows={3}
+            value={form.descripcion}
+            onChange={(e) => onChange("descripcion", e.target.value)}
+            onBlur={() => onBlur("descripcion")}
+          />
+          {touched.descripcion && errors.descripcion && (
+            <div className="invalid-feedback">{errors.descripcion}</div>
+          )}
+        </div>
+
+        <div className="col-12 col-md-6">
+          <label className="form-label">Dirección</label>
+          <input
+            className="form-control"
+            value={form.direccion}
+            onChange={(e) => onChange("direccion", e.target.value)}
+          />
+        </div>
+
+        <div className="col-12 col-md-6">
+          <label className="form-label">Productos (separados por coma)</label>
+          <input
+            className="form-control"
+            placeholder="Ej: Capuchino, Mocaccino"
+            value={form.productosTxt}
+            onChange={(e) => onChange("productosTxt", e.target.value)}
+          />
+        </div>
+
+        <div className="col-12 col-md-8">
+          <label className="form-label">Imagen (URL o archivo en public)</label>
+          <input
+            className={`form-control ${
+              touched.imagenUrl && errors.imagenUrl ? "is-invalid" : ""
+            }`}
+            placeholder="https://...  o  coffee.jpg"
+            value={form.imagenUrl}
+            onChange={(e) => onChange("imagenUrl", e.target.value)}
+            onBlur={() => onBlur("imagenUrl")}
+          />
+          {touched.imagenUrl && errors.imagenUrl && (
+            <div className="invalid-feedback">{errors.imagenUrl}</div>
+          )}
+          <div className="form-text">
+            Puedes escribir direccion URL de la imagen (p.ej.{" "}
+            <code>https://.</code>) o archivo de /public (p.ej.{" "}
+            <code>coffee.jpg</code>).
+          </div>
+        </div>
+
+        <div className="col-12 col-md-4">
+          <label className="form-label">Vista previa</label>
+          <div
+            className="border rounded d-flex align-items-center justify-content-center bg-light"
+            style={{ height: 120 }}
+          >
+            {normalizedPreview ? (
+              <img
+                src={normalizedPreview}
+                alt="Vista previa"
+                className="h-100"
+                style={{ objectFit: "contain" }}
+                onError={(e) => {
+                  e.currentTarget.style.opacity = 0.3;
+                }}
+              />
+            ) : (
+              <span className="text-muted small">Sin imagen</span>
+            )}
+          </div>
+        </div>
+
+        <div className="col-12">
+          <button type="submit" className="btn btn-primary">
+            Crear
+          </button>
+        </div>
       </form>
     </section>
   );
