@@ -1,0 +1,55 @@
+[
+  {
+    "id": "e-001",
+    "nombre": "Café La Montaña",
+    "categoria": "Comida",
+    "descripcion": "Café artesanal y repostería.",
+    "direccion": "Cra 12 # 34-56",
+    "productos": [
+      {
+        "nombre": "Capuchino",
+        "precio": 7500,
+        "imagenUrl": "/prod-capuchino.jpg"
+      },
+      {
+        "nombre": "Mocaccino",
+        "precio": 8200,
+        "imagenUrl": "/prod-mocaccino.jpg"
+      },
+      {
+        "nombre": "Torta de zanahoria",
+        "precio": 9500,
+        "imagenUrl": "/prod-zanahoria.jpg"
+      }
+    ],
+    "fechaRegistro": "2025-10-15T09:00:00Z",
+    "destacada": true,
+    "imagenUrl": "/cafe.png"
+  },
+  {
+    "id": "e-002",
+    "nombre": "EcoFit",
+    "categoria": "Deporte",
+    "descripcion": "Ropa deportiva ecológica.",
+    "direccion": "Av. Central 45-10",
+    "productos": [
+      {
+        "nombre": "Balon de futbol",
+        "precio": 49900,
+        "imagenUrl": "/prod-ball.jpg"
+      },
+      {
+        "nombre": "Balon de Basket",
+        "precio": 39900,
+        "imagenUrl": "/prod-basket.jpg"
+      },
+      {
+        "nombre": "Balon de Golf",
+        "precio": 45900,
+        "imagenUrl": "/prod-golf.jpg"
+      }
+    ],
+    "fechaRegistro": "2025-10-18T11:30:00Z",
+    "imagenUrl": "/ecoFit.jpg"
+  }
+]
