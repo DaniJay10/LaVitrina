@@ -1,14 +1,17 @@
-import { useParams, useNavigate } from "react-router-dom";
+import { useState } from "react";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import { useData } from "../context/DataContext";
 import { useAuth } from "../context/AuthContext";
 import ProductCard from "../components/ProductCard";
-import { Link } from "react-router-dom";
+import { useToast } from "../context/ToastContext";
+import ConfirmModal from "../components/ConfirmModal";
 
 export default function EmpresaDetalle() {
   const { id } = useParams();
   const { empresas, eliminarEmpresa } = useData();
   const { isAdmin } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   const empresa = empresas.find((e) => e.id === id);
   if (!empresa) {
@@ -32,11 +35,14 @@ export default function EmpresaDetalle() {
     );
   }
 
-  const onDelete = () => {
-    if (confirm("¿Eliminar esta empresa?")) {
-      eliminarEmpresa(empresa.id);
-      navigate("/empresas");
-    }
+  const openDeleteModal = () => {
+    window.__confirm_modals?.delEmpresa?.open();
+  };
+
+  const confirmDelete = () => {
+    eliminarEmpresa(empresa.id);
+    toast("Empresa eliminada", "danger");
+    navigate("/empresas");
   };
 
   return (
@@ -53,10 +59,11 @@ export default function EmpresaDetalle() {
         >
           ← Regresar
         </button>
+
         {isAdmin && (
           <>
             <button
-              onClick={onDelete}
+              onClick={openDeleteModal}
               style={{
                 padding: "8px 12px",
                 border: "1px solid #f1c0c0",
@@ -110,6 +117,15 @@ export default function EmpresaDetalle() {
       ) : (
         <p style={{ opacity: 0.7 }}>Sin productos cargados aún.</p>
       )}
+
+      <ConfirmModal
+        id="delEmpresa"
+        title="Eliminar empresa"
+        message="Se quitará esta empresa y su catálogo."
+        confirmText="Eliminar"
+        cancelText="Cancelar"
+        onConfirm={confirmDelete}
+      />
     </section>
   );
 }

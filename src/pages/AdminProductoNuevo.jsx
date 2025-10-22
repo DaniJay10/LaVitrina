@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useData } from "../context/DataContext";
+import { useToast } from "../context/ToastContext";
 
 function normalizeImg(url) {
   const v = (url || "").trim();
@@ -15,6 +16,7 @@ export default function AdminProductoNuevo() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { isAdmin } = useAuth();
+  const { toast } = useToast();
   const { empresas, crearProducto } = useData();
 
   if (!isAdmin) {
@@ -81,6 +83,7 @@ export default function AdminProductoNuevo() {
       imagenUrl: form.imagenUrl ? normalizeImg(form.imagenUrl) : "",
     };
     crearProducto(empresa.id, producto);
+    toast("Producto agregado");
     navigate(`/admin/empresa/${empresa.id}/productos`);
   };
 

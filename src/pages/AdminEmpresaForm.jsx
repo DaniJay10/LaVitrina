@@ -2,13 +2,13 @@ import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useData } from "../context/DataContext";
+import { useToast } from "../context/ToastContext";
 
 const CATS = ["Deporte", "Gastronomía", "Maquillaje", "Artesanias"];
 
 function uuid() {
   return "e-" + Math.random().toString(36).slice(2, 9);
 }
-
 function normalizeImg(url) {
   const v = (url || "").trim();
   if (!v) return "";
@@ -20,6 +20,7 @@ function normalizeImg(url) {
 export default function AdminEmpresaForm() {
   const { isAdmin } = useAuth();
   const { crearEmpresa } = useData();
+  const { toast } = useToast();
   const navigate = useNavigate();
 
   const [form, setForm] = useState({
@@ -35,13 +36,18 @@ export default function AdminEmpresaForm() {
     return (
       <section className="container my-3">
         <h1 className="h4">No autorizado</h1>
-        <p>Inicia sesión como admin.</p>
+        <p className="text-muted">Inicia sesión como administrador.</p>
       </section>
     );
   }
 
   const onChange = (k, v) => setForm((prev) => ({ ...prev, [k]: v }));
   const onBlur = (k) => setTouched((prev) => ({ ...prev, [k]: true }));
+
+  const normalizedPreview = useMemo(
+    () => normalizeImg(form.imagenUrl),
+    [form.imagenUrl]
+  );
 
   const errors = useMemo(() => {
     const e = {};
@@ -69,11 +75,12 @@ export default function AdminEmpresaForm() {
       categoria: form.categoria,
       descripcion: form.descripcion.trim(),
       direccion: form.direccion.trim(),
-      productos: [], // <-- vacío por ahora, se gestionará aparte
+      productos: [], // se gestionan aparte
       fechaRegistro: new Date().toISOString(),
       imagenUrl: form.imagenUrl ? normalizeImg(form.imagenUrl) : undefined,
     };
     crearEmpresa(nueva);
+    toast("Empresa creada");
     navigate("/");
   };
 
@@ -128,7 +135,8 @@ export default function AdminEmpresaForm() {
           )}
         </div>
 
-        <div className="col-12 col-md-6">
+        {/* Dirección ocupa todo el ancho */}
+        <div className="col-12">
           <label className="form-label">Dirección</label>
           <input
             className="form-control"
@@ -137,7 +145,8 @@ export default function AdminEmpresaForm() {
           />
         </div>
 
-        <div className="col-12 col-md-6">
+        {/* Imagen (8 columnas) + Preview (4 columnas) lado a lado */}
+        <div className="col-12 col-md-8">
           <label className="form-label">Imagen (URL o archivo en public)</label>
           <input
             className={`form-control ${
@@ -152,9 +161,31 @@ export default function AdminEmpresaForm() {
             <div className="invalid-feedback">{errors.imagenUrl}</div>
           )}
           <div className="form-text">
-            Puedes escribir dirección URL de la imagen (p.ej.{" "}
-            <code>https://…</code>) o archivo de /public (p.ej.{" "}
-            <code>coffee.jpg</code>).
+            Puedes escribir dirección URL (p.ej. <code>https://…</code>) o
+            archivo de <code>/public</code> (p.ej. <code>coffee.jpg</code>). Si
+            escribes solo el nombre, se asume <code>/nombre</code>.
+          </div>
+        </div>
+
+        <div className="col-12 col-md-4">
+          <label className="form-label">Vista previa</label>
+          <div
+            className="border rounded d-flex align-items-center justify-content-center bg-light"
+            style={{ height: 160 }}
+          >
+            {normalizedPreview ? (
+              <img
+                src={normalizedPreview}
+                alt="Vista previa"
+                className="h-100"
+                style={{ objectFit: "contain" }}
+                onError={(e) => {
+                  e.currentTarget.style.opacity = 0.3;
+                }}
+              />
+            ) : (
+              <span className="text-muted small">Sin imagen</span>
+            )}
           </div>
         </div>
 
