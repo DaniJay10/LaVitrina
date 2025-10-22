@@ -7,7 +7,8 @@
     "direccion": "Cra 12 # 34-56",
     "productos": ["Capuchino", "Mocaccino", "Torta de zanahoria"],
     "fechaRegistro": "2025-10-15T09:00:00Z",
-    "destacada": true
+    "destacada": true,
+    "imagenUrl": "/cafe.png"
   },
   {
     "id": "e-002",
@@ -16,6 +17,7 @@
     "descripcion": "Ropa deportiva ecológica.",
     "direccion": "Av. Central 45-10",
     "productos": ["Leggins", "Top deportivo", "Camisillas"],
-    "fechaRegistro": "2025-10-18T11:30:00Z"
+    "fechaRegistro": "2025-10-18T11:30:00Z",
+    "imagenUrl": "/ecoFit.jpg"
   }
 ]
