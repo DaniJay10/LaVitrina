@@ -31,6 +31,17 @@ const setProductosBaseEliminados = (empresaId, arr) =>
     JSON.stringify(arr)
   );
 
+// productos base EDITADOS por empresa (mapa indiceBase -> productoEditado)
+const keyProductosBaseEditados = (empresaId) =>
+  `productosBaseEditados:${empresaId}`;
+const getProductosBaseEditados = (empresaId) =>
+  JSON.parse(localStorage.getItem(keyProductosBaseEditados(empresaId)) || "{}");
+const setProductosBaseEditados = (empresaId, obj) =>
+  localStorage.setItem(
+    keyProductosBaseEditados(empresaId),
+    JSON.stringify(obj)
+  );
+
 const Ctx = createContext(null);
 
 export function DataProvider({ children }) {
@@ -43,30 +54,31 @@ export function DataProvider({ children }) {
       const creadas = JSON.parse(localStorage.getItem(C_CREATED) || "[]");
       const eliminadas = JSON.parse(localStorage.getItem(C_REMOVED) || "[]");
 
-      // base seed sin empresas eliminadas
       const base = seed.filter((e) => !eliminadas.includes(e.id));
 
-      // fusionar y aplicar productos creados + eliminaciones de base, pero
-      // exponiendo a la UI SOLO una lista unificada `productos`
       const merged = [...base, ...creadas]
         .sort((a, b) => new Date(b.fechaRegistro) - new Date(a.fechaRegistro))
         .map((e) => {
-          const creados = getProductosCreados(e.id); // productos añadidos por admin
-          const elimBaseIdxs = getProductosBaseEliminados(e.id); // índices base eliminados
+          const creados = getProductosCreados(e.id);
+          const elimBaseIdxs = getProductosBaseEliminados(e.id);
+          const baseEdits = getProductosBaseEditados(e.id); // { [idxReal]: productoEditado }
 
-          const baseProductos = Array.isArray(e.productos) ? e.productos : [];
-          const baseFiltrado = baseProductos.filter(
-            (_, idx) => !elimBaseIdxs.includes(idx)
-          );
+          const baseOriginal = Array.isArray(e.productos) ? e.productos : [];
 
-          // Lista FINAL que ve la UI:
-          const productos = [...baseFiltrado, ...creados];
+          // construye base visible aplicando eliminados y ediciones
+          const baseVisibles = baseOriginal
+            .map((p, idx) => ({ p, idx }))
+            .filter(({ idx }) => !elimBaseIdxs.includes(idx))
+            .map(({ p, idx }) => (baseEdits[idx] ? baseEdits[idx] : p));
 
-          // Guardamos metadatos solo internos para mapear índices en eliminaciones
+          const productos = [...baseVisibles, ...creados];
+
+          // meta interna para mapear índices UI
           const _meta = {
-            baseLengthOriginal: baseProductos.length,
+            baseOriginalLen: baseOriginal.length,
             elimBaseIdxs,
-            creadosLength: creados.length,
+            baseEdits, // objeto {idxReal: productoEditado}
+            creadosLen: creados.length,
           };
 
           return { ...e, productos, _meta };
@@ -101,9 +113,10 @@ export function DataProvider({ children }) {
         localStorage.getItem(C_CREATED) || "[]"
       ).filter((e) => e.id !== id);
       localStorage.setItem(C_CREATED, JSON.stringify(creadas));
-      // limpiar productos creados y eliminaciones de base
+      // limpiar productos por empresa
       localStorage.removeItem(keyProductosCreados(id));
       localStorage.removeItem(keyProductosBaseEliminados(id));
+      localStorage.removeItem(keyProductosBaseEditados(id));
       load();
     },
     [load]
@@ -118,36 +131,27 @@ export function DataProvider({ children }) {
     [load]
   );
 
-  /**
-   * Elimina un producto por su índice en la lista UNIFICADA que ve la UI.
-   * Si cae en la parte "base visible", mapea a índice real del base y lo marca eliminado.
-   * Si cae en la parte "creados", elimina del arreglo de creados por (uiIndex - baseVisiblesCount).
-   */
   const eliminarProducto = useCallback(
     (empresaId, uiIndex) => {
-      // Necesitamos reconstruir el contexto de esa empresa para mapear indices correctamente.
-      // Usamos la misma lógica que en load().
-      const baseEmpresaSeed = [...seed]; // copia para buscar
-      const empresaSeed = baseEmpresaSeed.find((e) => e.id === empresaId) || {
+      // Reconstruir contexto de indices
+      const empresaSeed = seed.find((e) => e.id === empresaId) || {
         productos: [],
       };
       const baseOriginal = Array.isArray(empresaSeed.productos)
         ? empresaSeed.productos
         : [];
-
       const elimBaseIdxs = getProductosBaseEliminados(empresaId);
       const creados = getProductosCreados(empresaId);
 
-      const baseFiltrado = baseOriginal.filter(
+      // base visibles = baseOriginal sin eliminados (ediciones no cambian la cantidad)
+      const baseVisiblesCount = baseOriginal.filter(
         (_, idx) => !elimBaseIdxs.includes(idx)
-      );
-      const baseVisiblesCount = baseFiltrado.length;
+      ).length;
 
       if (uiIndex < baseVisiblesCount) {
-        // Mapear índice de UI (en base filtrado) al índice real del base original
-        // Estrategia: recorrer índices reales y contar los que NO están eliminados
-        let count = 0;
-        let realIdx = -1;
+        // mapear uiIndex -> índice real de base
+        let count = 0,
+          realIdx = -1;
         for (let i = 0; i < baseOriginal.length; i++) {
           if (!elimBaseIdxs.includes(i)) {
             if (count === uiIndex) {
@@ -158,15 +162,61 @@ export function DataProvider({ children }) {
           }
         }
         if (realIdx >= 0) {
-          const nuevos = [...elimBaseIdxs, realIdx];
-          setProductosBaseEliminados(empresaId, Array.from(new Set(nuevos)));
+          const nuevos = Array.from(new Set([...elimBaseIdxs, realIdx]));
+          setProductosBaseEliminados(empresaId, nuevos);
         }
       } else {
-        // Es un producto "creado": índice relativo
         const createdIndex = uiIndex - baseVisiblesCount;
         if (createdIndex >= 0 && createdIndex < creados.length) {
           const nuevos = [...creados];
           nuevos.splice(createdIndex, 1);
+          setProductosCreados(empresaId, nuevos);
+        }
+      }
+      load();
+    },
+    [load]
+  );
+
+  const actualizarProducto = useCallback(
+    (empresaId, uiIndex, producto) => {
+      const empresaSeed = seed.find((e) => e.id === empresaId) || {
+        productos: [],
+      };
+      const baseOriginal = Array.isArray(empresaSeed.productos)
+        ? empresaSeed.productos
+        : [];
+      const elimBaseIdxs = getProductosBaseEliminados(empresaId);
+      const creados = getProductosCreados(empresaId);
+      const baseEdits = getProductosBaseEditados(empresaId);
+
+      const baseVisiblesCount = baseOriginal.filter(
+        (_, idx) => !elimBaseIdxs.includes(idx)
+      ).length;
+
+      if (uiIndex < baseVisiblesCount) {
+        // editar un producto del base → guardamos la edición en el mapa (sin duplicar)
+        let count = 0,
+          realIdx = -1;
+        for (let i = 0; i < baseOriginal.length; i++) {
+          if (!elimBaseIdxs.includes(i)) {
+            if (count === uiIndex) {
+              realIdx = i;
+              break;
+            }
+            count++;
+          }
+        }
+        if (realIdx >= 0) {
+          const nuevoMapa = { ...baseEdits, [realIdx]: producto };
+          setProductosBaseEditados(empresaId, nuevoMapa);
+        }
+      } else {
+        // editar un producto creado → lo reemplazamos en su arreglo
+        const createdIndex = uiIndex - baseVisiblesCount;
+        if (createdIndex >= 0 && createdIndex < creados.length) {
+          const nuevos = [...creados];
+          nuevos[createdIndex] = producto;
           setProductosCreados(empresaId, nuevos);
         }
       }
@@ -182,7 +232,8 @@ export function DataProvider({ children }) {
       crearEmpresa,
       eliminarEmpresa,
       crearProducto,
-      eliminarProducto, // <-- ¡UNIFICADO!
+      eliminarProducto,
+      actualizarProducto, // <-- NUEVO
     }),
     [
       empresas,
@@ -191,6 +242,7 @@ export function DataProvider({ children }) {
       eliminarEmpresa,
       crearProducto,
       eliminarProducto,
+      actualizarProducto,
     ]
   );
 

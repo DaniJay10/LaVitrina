@@ -55,14 +55,16 @@ export default function AdminProductos() {
             Ver empresa
           </Link>
         </div>
-        <button
-          className="btn btn-primary"
-          onClick={() =>
-            navigate(`/admin/empresa/${empresa.id}/productos/nuevo`)
-          }
-        >
-          Agregar producto
-        </button>
+        <div className="d-flex gap-2">
+          <button
+            className="btn btn-primary"
+            onClick={() =>
+              navigate(`/admin/empresa/${empresa.id}/productos/nuevo`)
+            }
+          >
+            Agregar producto
+          </button>
+        </div>
       </div>
 
       <h1 className="h4 mb-2">Catálogo — {empresa.nombre}</h1>
@@ -75,13 +77,25 @@ export default function AdminProductos() {
             <div key={uiIndex} className="col-12 col-sm-6 col-md-4 col-lg-3">
               <div className="position-relative">
                 <ProductCard producto={p} />
-                <button
-                  className="btn btn-outline-danger btn-sm position-absolute top-0 end-0 m-2"
-                  onClick={() => onDelete(uiIndex)}
-                  aria-label={`Eliminar ${p.nombre}`}
-                >
-                  Eliminar
-                </button>
+                <div className="position-absolute top-0 end-0 m-2 d-flex gap-2">
+                  <button
+                    className="btn btn-danger btn-sm"
+                    onClick={() => onDelete(uiIndex)}
+                    aria-label={`Eliminar ${p.nombre}`}
+                  >
+                    Eliminar
+                  </button>
+                  <button
+                    className="btn btn-outline-secondary btn-sm"
+                    onClick={() =>
+                      navigate(
+                        `/admin/empresa/${empresa.id}/productos/${uiIndex}/editar`
+                      )
+                    }
+                  >
+                    Editar
+                  </button>
+                </div>
               </div>
             </div>
           ))}

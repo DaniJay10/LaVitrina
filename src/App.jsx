@@ -7,6 +7,7 @@ import AdminEmpresaForm from "./pages/AdminEmpresaForm";
 import Navbar from "./components/Navbar";
 import AdminProductos from "./pages/AdminProductos";
 import AdminProductoNuevo from "./pages/AdminProductoNuevo";
+import AdminProductoEditar from "./pages/AdminProductoEditar";
 
 export default function App() {
   return (
@@ -27,6 +28,10 @@ export default function App() {
           <Route
             path="/admin/empresa/:id/productos/nuevo"
             element={<AdminProductoNuevo />}
+          />
+          <Route
+            path="/admin/empresa/:id/productos/:uiIndex/editar"
+            element={<AdminProductoEditar />}
           />
         </Routes>
       </main>
