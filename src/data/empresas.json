@@ -1,0 +1,21 @@
+[
+  {
+    "id": "e-001",
+    "nombre": "Café La Montaña",
+    "categoria": "Gastronomía",
+    "descripcion": "Café artesanal y repostería.",
+    "direccion": "Cra 12 # 34-56",
+    "productos": ["Capuchino", "Mocaccino", "Torta de zanahoria"],
+    "fechaRegistro": "2025-10-15T09:00:00Z",
+    "destacada": true
+  },
+  {
+    "id": "e-002",
+    "nombre": "EcoFit",
+    "categoria": "Deporte",
+    "descripcion": "Ropa deportiva ecológica.",
+    "direccion": "Av. Central 45-10",
+    "productos": ["Leggins", "Top deportivo", "Camisillas"],
+    "fechaRegistro": "2025-10-18T11:30:00Z"
+  }
+]
