@@ -39,7 +39,7 @@ export default function AdminProductoEditar() {
         <h1 className="h4">Producto no encontrado</h1>
         <button
           className="btn btn-outline-secondary mt-2"
-          onClick={() => navigate(-1)}
+          onClick={() => navigate("/")}
         >
           ← Regresar
         </button>
@@ -102,7 +102,7 @@ export default function AdminProductoEditar() {
         <div className="d-flex gap-2">
           <button
             className="btn btn-outline-secondary"
-            onClick={() => navigate(-1)}
+            onClick={() => navigate(`/admin/empresa/${empresa.id}/productos`)}
           >
             ← Regresar
           </button>

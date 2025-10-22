@@ -24,7 +24,7 @@ export default function AdminProductos() {
         <h1 className="h4">Empresa no encontrada</h1>
         <button
           className="btn btn-outline-secondary mt-2"
-          onClick={() => navigate(-1)}
+          onClick={() => navigate("/")}
         >
           ← Regresar
         </button>
@@ -42,9 +42,10 @@ export default function AdminProductos() {
     <section className="container my-3">
       <div className="d-flex justify-content-between align-items-center mb-3">
         <div className="d-flex gap-2">
+          {/* Regresar SIEMPRE al inicio para evitar volver al editor por historial */}
           <button
             className="btn btn-outline-secondary"
-            onClick={() => navigate(-1)}
+            onClick={() => navigate("/")}
           >
             ← Regresar
           </button>
@@ -86,7 +87,7 @@ export default function AdminProductos() {
                     Eliminar
                   </button>
                   <button
-                    className="btn btn-outline-secondary btn-sm"
+                    className="btn btn-secondary btn-sm"
                     onClick={() =>
                       navigate(
                         `/admin/empresa/${empresa.id}/productos/${uiIndex}/editar`
