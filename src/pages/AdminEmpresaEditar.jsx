@@ -1,14 +1,11 @@
-import { useState, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { useMemo, useState } from "react";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useData } from "../context/DataContext";
 import { useToast } from "../context/ToastContext";
 
 const CATS = ["Deporte", "Gastronomía", "Maquillaje", "Artesanias"];
 
-function uuid() {
-  return "e-" + Math.random().toString(36).slice(2, 9);
-}
 function normalizeImg(url) {
   const v = (url || "").trim();
   if (!v) return "";
@@ -17,29 +14,44 @@ function normalizeImg(url) {
   return "/" + v;
 }
 
-export default function AdminEmpresaForm() {
-  const { isAdmin } = useAuth();
-  const { crearEmpresa } = useData();
-  const { toast } = useToast();
+export default function AdminEmpresaEditar() {
+  const { id } = useParams();
   const navigate = useNavigate();
-
-  const [form, setForm] = useState({
-    nombre: "",
-    categoria: CATS[0],
-    descripcion: "",
-    direccion: "",
-    imagenUrl: "",
-  });
-  const [touched, setTouched] = useState({});
+  const { isAdmin } = useAuth();
+  const { empresas, actualizarEmpresa } = useData();
+  const { toast } = useToast();
 
   if (!isAdmin) {
     return (
       <section className="container my-3">
         <h1 className="h4">No autorizado</h1>
-        <p className="text-muted">Inicia sesión como administrador.</p>
       </section>
     );
   }
+
+  const empresa = empresas.find((e) => e.id === id);
+  if (!empresa) {
+    return (
+      <section className="container my-3">
+        <h1 className="h4">Empresa no encontrada</h1>
+        <button
+          className="btn btn-outline-secondary mt-2"
+          onClick={() => navigate("/")}
+        >
+          ← Regresar
+        </button>
+      </section>
+    );
+  }
+
+  const [form, setForm] = useState({
+    nombre: empresa.nombre || "",
+    categoria: empresa.categoria || CATS[0],
+    descripcion: empresa.descripcion || "",
+    direccion: empresa.direccion || "",
+    imagenUrl: empresa.imagenUrl || "",
+  });
+  const [touched, setTouched] = useState({});
 
   const onChange = (k, v) => setForm((prev) => ({ ...prev, [k]: v }));
   const onBlur = (k) => setTouched((prev) => ({ ...prev, [k]: true }));
@@ -69,24 +81,40 @@ export default function AdminEmpresaForm() {
       setTouched({ nombre: true, descripcion: true, imagenUrl: true });
       return;
     }
-    const nueva = {
-      id: uuid(),
+    const actualizada = {
+      id: empresa.id,
       nombre: form.nombre.trim(),
       categoria: form.categoria,
       descripcion: form.descripcion.trim(),
       direccion: form.direccion.trim(),
-      productos: [], // se gestionan aparte
-      fechaRegistro: new Date().toISOString(),
       imagenUrl: form.imagenUrl ? normalizeImg(form.imagenUrl) : undefined,
+      // NO tocamos productos aquí.
     };
-    crearEmpresa(nueva);
-    toast("Empresa creada");
-    navigate("/");
+    actualizarEmpresa(actualizada);
+    toast("Empresa actualizada");
+    navigate(`/empresa/${empresa.id}`);
   };
 
   return (
     <section className="container my-3">
-      <h1 className="h4">Nueva empresa</h1>
+      <div className="d-flex justify-content-between align-items-center mb-3">
+        <div className="d-flex gap-2">
+          <button
+            className="btn btn-outline-secondary"
+            onClick={() => navigate(`/empresa/${empresa.id}`)}
+          >
+            ← Regresar
+          </button>
+          <Link
+            to={`/empresa/${empresa.id}`}
+            className="btn btn-outline-secondary"
+          >
+            Ver empresa
+          </Link>
+        </div>
+      </div>
+
+      <h1 className="h4">Editar empresa</h1>
 
       <form onSubmit={onSubmit} className="row g-3">
         <div className="col-12 col-md-6">
@@ -135,7 +163,6 @@ export default function AdminEmpresaForm() {
           )}
         </div>
 
-        {/* Dirección ocupa todo el ancho */}
         <div className="col-12">
           <label className="form-label">Dirección</label>
           <input
@@ -145,7 +172,6 @@ export default function AdminEmpresaForm() {
           />
         </div>
 
-        {/* Imagen (8 columnas) + Preview (4 columnas) lado a lado */}
         <div className="col-12 col-md-8">
           <label className="form-label">Imagen (URL o archivo en public)</label>
           <input
@@ -191,7 +217,7 @@ export default function AdminEmpresaForm() {
 
         <div className="col-12">
           <button type="submit" className="btn btn-primary">
-            Crear
+            Guardar cambios
           </button>
         </div>
       </form>

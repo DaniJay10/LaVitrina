@@ -2,12 +2,17 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import { useData } from "../context/DataContext";
 import ProductCard from "../components/ProductCard";
 import { useAuth } from "../context/AuthContext";
+import ConfirmModal from "../components/ConfirmModal";
+import { useToast } from "../context/ToastContext";
+import { useRef, useState } from "react";
 
 export default function AdminProductos() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { empresas, eliminarProducto } = useData();
   const { isAdmin } = useAuth();
+  const { toast } = useToast();
+  const [pendingDeleteIndex, setPendingDeleteIndex] = useState(null);
 
   if (!isAdmin) {
     return (
@@ -32,17 +37,22 @@ export default function AdminProductos() {
     );
   }
 
-  const onDelete = (uiIndex) => {
-    if (confirm("¿Eliminar este producto?")) {
-      eliminarProducto(empresa.id, uiIndex);
-    }
+  const askDelete = (uiIndex) => {
+    setPendingDeleteIndex(uiIndex);
+    window.__confirm_modals?.adminDelete?.open();
+  };
+
+  const doDelete = () => {
+    if (pendingDeleteIndex == null) return;
+    eliminarProducto(empresa.id, pendingDeleteIndex);
+    setPendingDeleteIndex(null);
+    toast("Producto eliminado", "danger");
   };
 
   return (
     <section className="container my-3">
       <div className="d-flex justify-content-between align-items-center mb-3">
         <div className="d-flex gap-2">
-          {/* Regresar SIEMPRE al inicio para evitar volver al editor por historial */}
           <button
             className="btn btn-outline-secondary"
             onClick={() => navigate("/")}
@@ -81,7 +91,7 @@ export default function AdminProductos() {
                 <div className="position-absolute top-0 end-0 m-2 d-flex gap-2">
                   <button
                     className="btn btn-danger btn-sm"
-                    onClick={() => onDelete(uiIndex)}
+                    onClick={() => askDelete(uiIndex)}
                     aria-label={`Eliminar ${p.nombre}`}
                   >
                     Eliminar
@@ -102,6 +112,15 @@ export default function AdminProductos() {
           ))}
         </div>
       )}
+
+      <ConfirmModal
+        id="adminDelete"
+        title="Eliminar producto"
+        message="Esta acción no se puede deshacer."
+        confirmText="Eliminar"
+        cancelText="Cancelar"
+        onConfirm={doDelete}
+      />
     </section>
   );
 }

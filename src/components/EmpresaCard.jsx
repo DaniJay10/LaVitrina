@@ -1,17 +1,20 @@
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useData } from "../context/DataContext";
-
-const IMAGE_FIT = "contain";
-const IMAGE_RATIO_CLASS = "ratio-4x3";
+import { useToast } from "../context/ToastContext";
+import ConfirmModal from "./ConfirmModal";
 
 export default function EmpresaCard({ empresa }) {
   const { isAdmin } = useAuth();
   const { eliminarEmpresa } = useData();
+  const { toast } = useToast();
 
-  const onDelete = () => {
-    if (confirm("¿Eliminar esta empresa?")) eliminarEmpresa(empresa.id);
+  const doDelete = () => {
+    eliminarEmpresa(empresa.id);
+    toast("Empresa eliminada", "danger");
   };
+
+  const modalId = `delEmp-${empresa.id}`;
 
   return (
     <article className="card h-100">
@@ -21,9 +24,16 @@ export default function EmpresaCard({ empresa }) {
           <span className="badge text-bg-light">{empresa.categoria}</span>
         </div>
 
+        {empresa.destacada && (
+          <span className="badge text-bg-warning mt-2 align-self-start">
+            Destacada
+          </span>
+        )}
+
         <p className="mb-1 mt-2">{empresa.descripcion}</p>
         <p className="text-muted small mb-2">📍 {empresa.direccion}</p>
 
+        {/* Imagen con alto fijo (opción B que elegiste) */}
         {empresa.imagenUrl && (
           <div className="mb-3 position-relative" style={{ height: 160 }}>
             <img
@@ -32,11 +42,6 @@ export default function EmpresaCard({ empresa }) {
               className="w-100 h-100 rounded"
               style={{ objectFit: "cover", objectPosition: "center" }}
             />
-            {empresa.destacada && (
-              <span className="badge text-bg-warning position-absolute top-0 end-0 m-2">
-                Destacada
-              </span>
-            )}
           </div>
         )}
 
@@ -47,16 +52,28 @@ export default function EmpresaCard({ empresa }) {
           >
             Ver catálogo
           </Link>
+
           {isAdmin && (
             <button
-              onClick={onDelete}
-              className="btn btn-outline-danger btn-sm"
+              className="btn btn-danger btn-sm"
+              onClick={() => window.__confirm_modals?.[modalId]?.open()}
             >
               Eliminar
             </button>
           )}
         </div>
       </div>
+
+      {isAdmin && (
+        <ConfirmModal
+          id={modalId}
+          title="Eliminar empresa"
+          message="Se quitará esta empresa y su catálogo."
+          confirmText="Eliminar"
+          cancelText="Cancelar"
+          onConfirm={doDelete}
+        />
+      )}
     </article>
   );
 }
