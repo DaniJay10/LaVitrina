@@ -18,7 +18,7 @@ export default function EmpresaDetalle() {
     return (
       <section>
         <button
-          onClick={() => navigate(-1)}
+          onClick={() => navigate("/")}
           style={{
             padding: "8px 12px",
             border: "1px solid #ddd",
@@ -74,6 +74,18 @@ export default function EmpresaDetalle() {
             >
               Eliminar Empresa
             </button>
+
+            <Link
+              to={`/admin/empresa/${empresa.id}/editar`}
+              style={{
+                padding: "8px 12px",
+                border: "1px solid #ddd",
+                borderRadius: 8,
+                textDecoration: "none",
+              }}
+            >
+              Editar empresa
+            </Link>
 
             <Link
               to={`/admin/empresa/${empresa.id}/productos`}

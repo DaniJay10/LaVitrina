@@ -11,14 +11,19 @@ import seed from "../data/empresas.json";
 const C_CREATED = "empresasCreadas";
 const C_REMOVED = "empresasEliminadas";
 
-// productos creados por empresa
+/* ----------------- EMPRESA OVERRIDES (aplican a TODAS) ----------------- */
+const K_OVERRIDE = "empresasOverride"; // { [id]: { ...camposEditados } }
+const getOverrides = () => JSON.parse(localStorage.getItem(K_OVERRIDE) || "{}");
+const setOverrides = (obj) =>
+  localStorage.setItem(K_OVERRIDE, JSON.stringify(obj));
+
+/* ----------------- PRODUCTOS (creados / eliminados / editados) ----------------- */
 const keyProductosCreados = (empresaId) => `productosCreados:${empresaId}`;
 const getProductosCreados = (empresaId) =>
   JSON.parse(localStorage.getItem(keyProductosCreados(empresaId)) || "[]");
 const setProductosCreados = (empresaId, arr) =>
   localStorage.setItem(keyProductosCreados(empresaId), JSON.stringify(arr));
 
-// índices de productos base eliminados por empresa
 const keyProductosBaseEliminados = (empresaId) =>
   `productosBaseEliminados:${empresaId}`;
 const getProductosBaseEliminados = (empresaId) =>
@@ -31,7 +36,6 @@ const setProductosBaseEliminados = (empresaId, arr) =>
     JSON.stringify(arr)
   );
 
-// productos base EDITADOS por empresa (mapa indiceBase -> productoEditado)
 const keyProductosBaseEditados = (empresaId) =>
   `productosBaseEditados:${empresaId}`;
 const getProductosBaseEditados = (empresaId) =>
@@ -42,6 +46,7 @@ const setProductosBaseEditados = (empresaId, obj) =>
     JSON.stringify(obj)
   );
 
+/* ----------------- CONTEXTO ----------------- */
 const Ctx = createContext(null);
 
 export function DataProvider({ children }) {
@@ -53,36 +58,44 @@ export function DataProvider({ children }) {
     setTimeout(() => {
       const creadas = JSON.parse(localStorage.getItem(C_CREATED) || "[]");
       const eliminadas = JSON.parse(localStorage.getItem(C_REMOVED) || "[]");
+      const overrides = getOverrides();
 
+      // 1) Base seed sin eliminadas
       const base = seed.filter((e) => !eliminadas.includes(e.id));
 
-      const merged = [...base, ...creadas]
-        .sort((a, b) => new Date(b.fechaRegistro) - new Date(a.fechaRegistro))
-        .map((e) => {
-          const creados = getProductosCreados(e.id);
-          const elimBaseIdxs = getProductosBaseEliminados(e.id);
-          const baseEdits = getProductosBaseEditados(e.id); // { [idxReal]: productoEditado }
+      // 2) Fusionar base + creadas
+      const mergedRaw = [...base, ...creadas].sort(
+        (a, b) => new Date(b.fechaRegistro) - new Date(a.fechaRegistro)
+      );
 
-          const baseOriginal = Array.isArray(e.productos) ? e.productos : [];
+      // 3) Aplicar OVERRIDES por ID (aplican a todas, seed o creadas)
+      const mergedOver = mergedRaw.map((e) =>
+        overrides[e.id] ? { ...e, ...overrides[e.id] } : e
+      );
 
-          // construye base visible aplicando eliminados y ediciones
-          const baseVisibles = baseOriginal
-            .map((p, idx) => ({ p, idx }))
-            .filter(({ idx }) => !elimBaseIdxs.includes(idx))
-            .map(({ p, idx }) => (baseEdits[idx] ? baseEdits[idx] : p));
+      // 4) Construir productos finales (base filtrado/ediciones + creados)
+      const merged = mergedOver.map((e) => {
+        const creados = getProductosCreados(e.id);
+        const elimBaseIdxs = getProductosBaseEliminados(e.id);
+        const baseEdits = getProductosBaseEditados(e.id);
 
-          const productos = [...baseVisibles, ...creados];
+        const baseOriginal = Array.isArray(e.productos) ? e.productos : [];
+        const baseVisibles = baseOriginal
+          .map((p, idx) => ({ p, idx }))
+          .filter(({ idx }) => !elimBaseIdxs.includes(idx))
+          .map(({ p, idx }) => (baseEdits[idx] ? baseEdits[idx] : p));
 
-          // meta interna para mapear índices UI
-          const _meta = {
-            baseOriginalLen: baseOriginal.length,
-            elimBaseIdxs,
-            baseEdits, // objeto {idxReal: productoEditado}
-            creadosLen: creados.length,
-          };
+        const productos = [...baseVisibles, ...creados];
 
-          return { ...e, productos, _meta };
-        });
+        const _meta = {
+          baseOriginalLen: baseOriginal.length,
+          elimBaseIdxs,
+          baseEdits,
+          creadosLen: creados.length,
+        };
+
+        return { ...e, productos, _meta };
+      });
 
       setEmpresas(merged);
       setLoading(false);
@@ -93,10 +106,33 @@ export function DataProvider({ children }) {
     load();
   }, [load]);
 
+  /* ----------------- EMPRESAS: crear/editar/eliminar ----------------- */
+
   const crearEmpresa = useCallback(
     (e) => {
       const creadas = JSON.parse(localStorage.getItem(C_CREATED) || "[]");
       localStorage.setItem(C_CREATED, JSON.stringify([e, ...creadas]));
+      load();
+    },
+    [load]
+  );
+
+  // ✅ EDITAR CUALQUIER EMPRESA (seed o creada): guardamos override por ID
+  const actualizarEmpresa = useCallback(
+    (empresaActualizada) => {
+      const overrides = getOverrides();
+      const prev = overrides[empresaActualizada.id] || {};
+      // Nunca tocamos productos aquí
+      overrides[empresaActualizada.id] = {
+        ...prev,
+        nombre: empresaActualizada.nombre,
+        categoria: empresaActualizada.categoria,
+        descripcion: empresaActualizada.descripcion,
+        direccion: empresaActualizada.direccion,
+        imagenUrl: empresaActualizada.imagenUrl,
+        // fechaRegistro no se toca; mantiene la original
+      };
+      setOverrides(overrides);
       load();
     },
     [load]
@@ -113,14 +149,21 @@ export function DataProvider({ children }) {
         localStorage.getItem(C_CREATED) || "[]"
       ).filter((e) => e.id !== id);
       localStorage.setItem(C_CREATED, JSON.stringify(creadas));
-      // limpiar productos por empresa
+      // limpiar productos y override
       localStorage.removeItem(keyProductosCreados(id));
       localStorage.removeItem(keyProductosBaseEliminados(id));
       localStorage.removeItem(keyProductosBaseEditados(id));
+      const overrides = getOverrides();
+      if (overrides[id]) {
+        delete overrides[id];
+        setOverrides(overrides);
+      }
       load();
     },
     [load]
   );
+
+  /* ----------------- PRODUCTOS: crear/eliminar/editar ----------------- */
 
   const crearProducto = useCallback(
     (empresaId, producto) => {
@@ -133,7 +176,6 @@ export function DataProvider({ children }) {
 
   const eliminarProducto = useCallback(
     (empresaId, uiIndex) => {
-      // Reconstruir contexto de indices
       const empresaSeed = seed.find((e) => e.id === empresaId) || {
         productos: [],
       };
@@ -143,13 +185,12 @@ export function DataProvider({ children }) {
       const elimBaseIdxs = getProductosBaseEliminados(empresaId);
       const creados = getProductosCreados(empresaId);
 
-      // base visibles = baseOriginal sin eliminados (ediciones no cambian la cantidad)
       const baseVisiblesCount = baseOriginal.filter(
         (_, idx) => !elimBaseIdxs.includes(idx)
       ).length;
 
       if (uiIndex < baseVisiblesCount) {
-        // mapear uiIndex -> índice real de base
+        // mapear al índice real del base
         let count = 0,
           realIdx = -1;
         for (let i = 0; i < baseOriginal.length; i++) {
@@ -195,7 +236,6 @@ export function DataProvider({ children }) {
       ).length;
 
       if (uiIndex < baseVisiblesCount) {
-        // editar un producto del base → guardamos la edición en el mapa (sin duplicar)
         let count = 0,
           realIdx = -1;
         for (let i = 0; i < baseOriginal.length; i++) {
@@ -212,7 +252,6 @@ export function DataProvider({ children }) {
           setProductosBaseEditados(empresaId, nuevoMapa);
         }
       } else {
-        // editar un producto creado → lo reemplazamos en su arreglo
         const createdIndex = uiIndex - baseVisiblesCount;
         if (createdIndex >= 0 && createdIndex < creados.length) {
           const nuevos = [...creados];
@@ -230,15 +269,17 @@ export function DataProvider({ children }) {
       empresas,
       loading,
       crearEmpresa,
+      actualizarEmpresa, // <- edita cualquiera (seed o creada)
       eliminarEmpresa,
       crearProducto,
       eliminarProducto,
-      actualizarProducto, // <-- NUEVO
+      actualizarProducto,
     }),
     [
       empresas,
       loading,
       crearEmpresa,
+      actualizarEmpresa,
       eliminarEmpresa,
       crearProducto,
       eliminarProducto,
